@@ -11,3 +11,5 @@ namespaces:
   assets: true
   # CitadelPackaging fork: read-only Search Console tools.
   search_console: true
+  # CitadelPackaging fork: Merchant Center tools.
+  merchant: true

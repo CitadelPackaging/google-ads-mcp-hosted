@@ -3,20 +3,17 @@
 Added in the CitadelPackaging fork; not part of upstream google-ads-mcp.
 Every tool here only reads data, using the webmasters.readonly scope.
 
-In remote OAuth mode, the caller's Google access token from the FastMCP
-OAuth proxy is used. In local stdio mode, Application Default Credentials
-are used, and they must include the webmasters.readonly scope.
+Authentication and HTTP handling live in ads_mcp.google_rest.
 """
 
-import json
-import urllib.error
 import urllib.parse
-import urllib.request
 from typing import Any, Dict, List, Literal
 
 from fastmcp import FastMCP
 from fastmcp.exceptions import ToolError
 from mcp.types import ToolAnnotations
+
+from ads_mcp import google_rest
 
 search_console_mcp = FastMCP("search_console")
 
@@ -25,7 +22,6 @@ _WEBMASTERS_BASE = "https://www.googleapis.com/webmasters/v3"
 _INSPECT_URL = (
     "https://searchconsole.googleapis.com/v1/urlInspection/index:inspect"
 )
-_TIMEOUT_SECONDS = 60
 _READ_ONLY = ToolAnnotations(readOnlyHint=True, openWorldHint=True)
 
 Dimension = Literal[
@@ -44,50 +40,13 @@ FilterOperator = Literal[
 ]
 
 
-def _access_token() -> str:
-    """Returns a Google access token for the current caller."""
-    from fastmcp.server.dependencies import get_access_token
-
-    token_obj = get_access_token()
-    if token_obj and token_obj.token:
-        return token_obj.token
-
-    import google.auth
-    import google.auth.transport.requests
-
-    credentials, _ = google.auth.default(scopes=[GSC_SCOPE])
-    credentials.refresh(google.auth.transport.requests.Request())
-    return credentials.token
-
-
 def _request(
     method: str, url: str, body: Dict[str, Any] | None = None
 ) -> Dict[str, Any]:
-    """Sends an authorized JSON request and returns the decoded response."""
-    data = json.dumps(body).encode("utf-8") if body is not None else None
-    req = urllib.request.Request(url, data=data, method=method)
-    req.add_header("Authorization", f"Bearer {_access_token()}")
-    req.add_header("Accept", "application/json")
-    if data is not None:
-        req.add_header("Content-Type", "application/json")
-    try:
-        with urllib.request.urlopen(req, timeout=_TIMEOUT_SECONDS) as resp:
-            raw = resp.read()
-    except urllib.error.HTTPError as ex:
-        raise ToolError(_format_http_error(ex)) from ex
-    except urllib.error.URLError as ex:
-        raise ToolError(f"Search Console request failed: {ex.reason}") from ex
-    return json.loads(raw) if raw else {}
-
-
-def _format_http_error(ex: urllib.error.HTTPError) -> str:
-    """Builds a readable message from a Google API error response."""
-    try:
-        payload = json.loads(ex.read() or b"{}")
-        message = payload.get("error", {}).get("message") or ex.reason
-    except (ValueError, AttributeError):
-        message = ex.reason
-    return f"Search Console API error {ex.code}: {message}"
+    """Sends an authorized Search Console request."""
+    return google_rest.request(
+        method, url, scope=GSC_SCOPE, api_name="Search Console", body=body
+    )
 
 
 def _site_path(site_url: str) -> str:

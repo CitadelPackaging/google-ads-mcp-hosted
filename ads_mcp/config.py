@@ -35,6 +35,7 @@ ALL_CATEGORIES = [
     "labels",
     "assets",
     "search_console",  # CitadelPackaging fork
+    "merchant",  # CitadelPackaging fork
 ]
 
 

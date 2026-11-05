@@ -19,7 +19,7 @@ def _response(payload):
     return resp
 
 
-@patch.object(search_console, "_access_token", return_value="test-token")
+@patch("ads_mcp.google_rest.access_token", return_value="test-token")
 @patch("urllib.request.urlopen")
 class TestSearchConsoleTools(unittest.TestCase):
     """Checks the requests each tool sends and how it parses replies."""

@@ -46,6 +46,9 @@ if _CLIENT_ID and _CLIENT_SECRET:
             "https://www.googleapis.com/auth/adwords",
             # CitadelPackaging fork: read-only Search Console tools.
             "https://www.googleapis.com/auth/webmasters.readonly",
+            # CitadelPackaging fork: Merchant Center. Google offers no
+            # read-only Merchant scope; the merchant tools only read.
+            "https://www.googleapis.com/auth/content",
         ],
     }
     if _JWT_SIGNING_KEY:
