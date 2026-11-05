@@ -9,3 +9,5 @@ namespaces:
   metadata: true
   labels: true
   assets: true
+  # CitadelPackaging fork: read-only Search Console tools.
+  search_console: true
